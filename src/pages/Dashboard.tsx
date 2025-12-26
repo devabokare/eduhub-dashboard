@@ -60,9 +60,9 @@ export default function Dashboard() {
         subtitle="Welcome back! Here's what's happening at your institution."
       />
       
-      <div className="p-6">
+      <div className="p-4 md:p-6">
         {/* Stats Grid */}
-        <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="mb-6 md:mb-8 grid gap-3 md:gap-4 grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat, index) => (
           <StatCard
             key={stat.title}
@@ -73,7 +73,7 @@ export default function Dashboard() {
         </div>
 
         {/* Charts Row */}
-        <div className="mb-8 grid gap-6 lg:grid-cols-2">
+        <div className="mb-6 md:mb-8 grid gap-4 md:gap-6 lg:grid-cols-2">
           <div className="animate-slide-up opacity-0 stagger-2">
             <AttendanceChart />
           </div>
@@ -83,7 +83,7 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom Row */}
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
           <div className="lg:col-span-2 animate-slide-up opacity-0 stagger-4">
             <RecentActivity />
           </div>
@@ -93,7 +93,7 @@ export default function Dashboard() {
         </div>
 
         {/* Events Section */}
-        <div className="mt-8 animate-slide-up opacity-0 stagger-5">
+        <div className="mt-6 md:mt-8 animate-slide-up opacity-0 stagger-5">
           <UpcomingEvents />
         </div>
       </div>

@@ -1,4 +1,4 @@
-import { Bell, Search, ChevronDown } from "lucide-react";
+import { Bell, Search, ChevronDown, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -11,31 +11,56 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useOutletContext } from "react-router-dom";
 
 interface HeaderProps {
   title: string;
   subtitle?: string;
 }
 
+interface OutletContextType {
+  onMenuClick?: () => void;
+}
+
 export function Header({ title, subtitle }: HeaderProps) {
+  const context = useOutletContext<OutletContextType>();
+  
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div>
-        <h1 className="text-xl font-semibold text-foreground">{title}</h1>
-        {subtitle && (
-          <p className="text-sm text-muted-foreground">{subtitle}</p>
+    <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-background/95 px-4 md:px-6 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="flex items-center gap-3">
+        {/* Mobile Menu Button */}
+        {context?.onMenuClick && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="md:hidden"
+            onClick={context.onMenuClick}
+          >
+            <Menu className="h-5 w-5" />
+          </Button>
         )}
+        <div>
+          <h1 className="text-lg md:text-xl font-semibold text-foreground">{title}</h1>
+          {subtitle && (
+            <p className="text-xs md:text-sm text-muted-foreground hidden sm:block">{subtitle}</p>
+          )}
+        </div>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 md:gap-4">
         {/* Search */}
-        <div className="relative hidden md:block">
+        <div className="relative hidden lg:block">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Search students, teachers..."
             className="w-64 pl-9 bg-secondary/50 border-0 focus-visible:ring-1"
           />
         </div>
+
+        {/* Mobile Search Button */}
+        <Button variant="ghost" size="icon" className="lg:hidden">
+          <Search className="h-5 w-5 text-muted-foreground" />
+        </Button>
 
         {/* Notifications */}
         <DropdownMenu>
@@ -74,10 +99,10 @@ export function Header({ title, subtitle }: HeaderProps) {
         {/* Theme Toggle */}
         <ThemeToggle />
 
-        {/* Academic Year */}
+        {/* Academic Year - Hidden on mobile */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2 hidden sm:flex">
               <span className="text-sm">2024-25</span>
               <ChevronDown className="h-4 w-4" />
             </Button>
