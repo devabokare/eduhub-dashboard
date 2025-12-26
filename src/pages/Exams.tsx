@@ -2,7 +2,7 @@ import { useState } from "react";
 import {
   Search,
   Plus,
-  Calendar,
+  Calendar as CalendarIcon,
   FileText,
   BarChart3,
   Clock,
@@ -11,6 +11,7 @@ import {
   Eye,
   Edit,
   Download,
+  ChevronLeft,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,20 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import {
+  format,
+  startOfMonth,
+  endOfMonth,
+  eachDayOfInterval,
+  isSameMonth,
+  isSameDay,
+  addMonths,
+  subMonths,
+  startOfWeek,
+  endOfWeek,
+  isWithinInterval,
+  parseISO,
+} from "date-fns";
 
 const exams = [
   {
@@ -87,6 +102,8 @@ const recentResults = [
 export default function Exams() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -100,6 +117,35 @@ export default function Exams() {
         return null;
     }
   };
+
+  const getExamsForDate = (date: Date) => {
+    return exams.filter((exam) => {
+      const start = parseISO(exam.startDate);
+      const end = parseISO(exam.endDate);
+      return isWithinInterval(date, { start, end });
+    });
+  };
+
+  const getExamColor = (status: string) => {
+    switch (status) {
+      case "upcoming":
+        return "bg-info";
+      case "ongoing":
+        return "bg-warning";
+      case "completed":
+        return "bg-success";
+      default:
+        return "bg-primary";
+    }
+  };
+
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  const calendarDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
+
+  const selectedDateExams = selectedDate ? getExamsForDate(selectedDate) : [];
 
   return (
     <div className="min-h-screen">
@@ -134,7 +180,7 @@ export default function Exams() {
                     <p className="mt-1 text-2xl font-bold text-info">3</p>
                   </div>
                   <div className="flex h-10 w-10 items-center justify-center rounded-full bg-info/10">
-                    <Calendar className="h-5 w-5 text-info" />
+                    <CalendarIcon className="h-5 w-5 text-info" />
                   </div>
                 </div>
               </div>
@@ -218,7 +264,7 @@ export default function Exams() {
 
                   <div className="mt-4 grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center gap-2 text-muted-foreground">
-                      <Calendar className="h-4 w-4" />
+                      <CalendarIcon className="h-4 w-4" />
                       <span>{exam.startDate} - {exam.endDate}</span>
                     </div>
                     <div className="flex items-center gap-2 text-muted-foreground">
@@ -325,9 +371,202 @@ export default function Exams() {
           </TabsContent>
 
           <TabsContent value="schedule" className="mt-0">
-            <div className="text-center py-12 text-muted-foreground">
-              <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>Exam schedule view coming soon</p>
+            <div className="grid gap-6 lg:grid-cols-3">
+              {/* Calendar */}
+              <div className="lg:col-span-2 rounded-xl border border-border bg-card p-5">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-semibold text-foreground">
+                    {format(currentMonth, "MMMM yyyy")}
+                  </h3>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setCurrentMonth(new Date())}
+                    >
+                      Today
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Calendar Grid */}
+                <div className="grid grid-cols-7 gap-1">
+                  {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
+                    <div
+                      key={day}
+                      className="py-2 text-center text-sm font-medium text-muted-foreground"
+                    >
+                      {day}
+                    </div>
+                  ))}
+                  {calendarDays.map((day, index) => {
+                    const dayExams = getExamsForDate(day);
+                    const isCurrentMonth = isSameMonth(day, currentMonth);
+                    const isToday = isSameDay(day, new Date());
+                    const isSelected = selectedDate && isSameDay(day, selectedDate);
+
+                    return (
+                      <button
+                        key={index}
+                        onClick={() => setSelectedDate(day)}
+                        className={cn(
+                          "relative min-h-[80px] p-2 border border-border rounded-lg transition-all text-left",
+                          !isCurrentMonth && "bg-muted/30 text-muted-foreground",
+                          isCurrentMonth && "bg-card hover:bg-muted/50",
+                          isToday && "ring-2 ring-primary",
+                          isSelected && "bg-primary/10 border-primary"
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            "text-sm font-medium",
+                            isToday && "text-primary font-bold"
+                          )}
+                        >
+                          {format(day, "d")}
+                        </span>
+                        <div className="mt-1 space-y-1">
+                          {dayExams.slice(0, 2).map((exam) => (
+                            <div
+                              key={exam.id}
+                              className={cn(
+                                "text-xs px-1.5 py-0.5 rounded truncate text-white",
+                                getExamColor(exam.status)
+                              )}
+                              title={exam.name}
+                            >
+                              {exam.name}
+                            </div>
+                          ))}
+                          {dayExams.length > 2 && (
+                            <div className="text-xs text-muted-foreground px-1">
+                              +{dayExams.length - 2} more
+                            </div>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Legend */}
+                <div className="mt-6 pt-4 border-t border-border flex flex-wrap gap-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-info" />
+                    <span className="text-sm text-muted-foreground">Upcoming</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-warning" />
+                    <span className="text-sm text-muted-foreground">Ongoing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded bg-success" />
+                    <span className="text-sm text-muted-foreground">Completed</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Selected Date Details */}
+              <div className="rounded-xl border border-border bg-card p-5">
+                <h3 className="font-semibold text-foreground mb-4">
+                  {selectedDate
+                    ? format(selectedDate, "EEEE, MMMM d, yyyy")
+                    : "Select a date"}
+                </h3>
+
+                {selectedDate ? (
+                  selectedDateExams.length > 0 ? (
+                    <div className="space-y-3">
+                      {selectedDateExams.map((exam) => (
+                        <div
+                          key={exam.id}
+                          className="p-4 rounded-lg border border-border bg-muted/30"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="font-medium text-foreground">{exam.name}</h4>
+                              <p className="text-sm text-muted-foreground mt-1">{exam.type}</p>
+                            </div>
+                            {getStatusBadge(exam.status)}
+                          </div>
+                          <div className="mt-3 space-y-2 text-sm text-muted-foreground">
+                            <div className="flex items-center gap-2">
+                              <CalendarIcon className="h-4 w-4" />
+                              <span>{exam.startDate} - {exam.endDate}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              <span>{exam.totalStudents} Students</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <FileText className="h-4 w-4" />
+                              <span>{exam.subjects} Subjects</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Clock className="h-4 w-4" />
+                              <span>Classes: {exam.classes.join(", ")}</span>
+                            </div>
+                          </div>
+                          <div className="mt-3 pt-3 border-t border-border">
+                            <Button variant="outline" size="sm" className="w-full gap-1">
+                              <Eye className="h-4 w-4" />
+                              View Details
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <CalendarIcon className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                      <p>No exams scheduled for this date</p>
+                    </div>
+                  )
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <CalendarIcon className="h-10 w-10 mx-auto mb-3 opacity-50" />
+                    <p>Click on a date to view exam details</p>
+                  </div>
+                )}
+
+                {/* Upcoming Exams List */}
+                <div className="mt-6 pt-4 border-t border-border">
+                  <h4 className="font-medium text-foreground mb-3">Upcoming Exams</h4>
+                  <div className="space-y-2">
+                    {exams
+                      .filter((e) => e.status === "upcoming")
+                      .map((exam) => (
+                        <div
+                          key={exam.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer"
+                          onClick={() => setSelectedDate(parseISO(exam.startDate))}
+                        >
+                          <div>
+                            <p className="text-sm font-medium text-foreground">{exam.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {format(parseISO(exam.startDate), "MMM d")} - {format(parseISO(exam.endDate), "MMM d")}
+                            </p>
+                          </div>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
             </div>
           </TabsContent>
         </Tabs>
