@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   Building2,
   Users,
@@ -10,6 +10,9 @@ import {
   Database,
   Mail,
   Save,
+  Upload,
+  ImageIcon,
+  X,
 } from "lucide-react";
 import { Header } from "@/components/layout/Header";
 import { Button } from "@/components/ui/button";
@@ -38,6 +41,32 @@ const settingsSections = [
 
 export default function Settings() {
   const [activeSection, setActiveSection] = useState("general");
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const bannerInputRef = useRef<HTMLInputElement>(null);
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setLogoPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleBannerChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setBannerPreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   return (
     <div className="min-h-screen">
@@ -75,12 +104,105 @@ export default function Settings() {
           <div className="flex-1">
             {activeSection === "general" && (
               <div className="space-y-6 animate-fade-in">
+                {/* Institution Logo & Banner */}
+                <div className="rounded-xl border border-border bg-card p-6">
+                  <h3 className="text-lg font-semibold text-foreground mb-4">Institution Branding</h3>
+                  <div className="grid gap-6 md:grid-cols-2">
+                    {/* Logo Upload */}
+                    <div className="space-y-3">
+                      <Label>Institution Logo</Label>
+                      <div className="flex items-center gap-4">
+                        <div className="relative h-24 w-24 rounded-lg border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                          {logoPreview ? (
+                            <>
+                              <img src={logoPreview} alt="Logo preview" className="h-full w-full object-cover" />
+                              <button
+                                onClick={() => setLogoPreview(null)}
+                                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <ImageIcon className="h-8 w-8 text-muted-foreground" />
+                          )}
+                        </div>
+                        <div className="space-y-2">
+                          <input
+                            type="file"
+                            ref={logoInputRef}
+                            onChange={handleLogoChange}
+                            accept="image/*"
+                            className="hidden"
+                          />
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => logoInputRef.current?.click()}
+                            className="gap-2"
+                          >
+                            <Upload className="h-4 w-4" />
+                            Upload Logo
+                          </Button>
+                          <p className="text-xs text-muted-foreground">PNG, JPG up to 2MB</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Banner Upload */}
+                    <div className="space-y-3">
+                      <Label>Institution Banner</Label>
+                      <div className="space-y-2">
+                        <div className="relative h-24 w-full rounded-lg border-2 border-dashed border-border bg-muted/50 flex items-center justify-center overflow-hidden">
+                          {bannerPreview ? (
+                            <>
+                              <img src={bannerPreview} alt="Banner preview" className="h-full w-full object-cover" />
+                              <button
+                                onClick={() => setBannerPreview(null)}
+                                className="absolute top-1 right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center hover:bg-destructive/90"
+                              >
+                                <X className="h-3 w-3" />
+                              </button>
+                            </>
+                          ) : (
+                            <div className="text-center">
+                              <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto" />
+                              <p className="text-xs text-muted-foreground mt-1">Banner Image</p>
+                            </div>
+                          )}
+                        </div>
+                        <input
+                          type="file"
+                          ref={bannerInputRef}
+                          onChange={handleBannerChange}
+                          accept="image/*"
+                          className="hidden"
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => bannerInputRef.current?.click()}
+                          className="gap-2"
+                        >
+                          <Upload className="h-4 w-4" />
+                          Upload Banner
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Institution Profile */}
                 <div className="rounded-xl border border-border bg-card p-6">
                   <h3 className="text-lg font-semibold text-foreground mb-4">Institution Profile</h3>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <div className="space-y-2">
+                    <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="institution-name">Institution Name</Label>
-                      <Input id="institution-name" defaultValue="Delhi Public School" />
+                      <Input id="institution-name" defaultValue="Delhi Public School" className="text-lg font-medium" />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label htmlFor="tagline">Tagline / Motto</Label>
+                      <Input id="tagline" placeholder="Enter institution motto or tagline" defaultValue="Excellence in Education" />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="institution-code">Institution Code</Label>
@@ -113,6 +235,10 @@ export default function Settings() {
                         </SelectContent>
                       </Select>
                     </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="established">Established Year</Label>
+                      <Input id="established" type="number" placeholder="e.g., 1985" defaultValue="1985" />
+                    </div>
                     <div className="space-y-2 sm:col-span-2">
                       <Label htmlFor="address">Address</Label>
                       <Input id="address" defaultValue="123 Education Street, New Delhi - 110001" />
@@ -124,6 +250,10 @@ export default function Settings() {
                     <div className="space-y-2">
                       <Label htmlFor="email">Email</Label>
                       <Input id="email" type="email" defaultValue="info@dps-delhi.edu" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="website">Website</Label>
+                      <Input id="website" type="url" placeholder="https://www.example.com" defaultValue="https://www.dps-delhi.edu" />
                     </div>
                   </div>
                 </div>
