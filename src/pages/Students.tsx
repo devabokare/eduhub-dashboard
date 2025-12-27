@@ -32,6 +32,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
 
 const students = [
   {
@@ -151,6 +153,38 @@ export default function Students() {
     return matchesSearch && matchesClass;
   });
 
+  const handleExport = () => {
+    const exportData = filteredStudents.map((student) => ({
+      "Student ID": student.id,
+      "Name": student.name,
+      "Email": student.email,
+      "Phone": student.phone,
+      "Class": student.class,
+      "Roll No": student.rollNo,
+      "Gender": student.gender,
+      "Parent Name": student.parentName,
+      "Admission Date": student.admissionDate,
+      "Status": student.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+
+    worksheet["!cols"] = [
+      { wch: 15 }, { wch: 20 }, { wch: 25 }, { wch: 18 },
+      { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 20 },
+      { wch: 15 }, { wch: 10 },
+    ];
+
+    XLSX.writeFile(workbook, `Students_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "Report Exported",
+      description: `${filteredStudents.length} student records exported successfully.`,
+    });
+  };
+
   return (
     <div className="min-h-screen">
       <Header title="Students" subtitle="Manage student records and information" />
@@ -191,7 +225,7 @@ export default function Students() {
           </div>
 
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleExport}>
               <Download className="h-4 w-4" />
               Export
             </Button>
