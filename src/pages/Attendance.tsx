@@ -22,6 +22,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
 
 const attendanceData = [
   { id: 1, name: "Aarav Sharma", rollNo: 1, status: "present", time: "8:15 AM" },
@@ -75,6 +77,34 @@ export default function Attendance() {
     }
   };
 
+  const handleExportReport = () => {
+    const exportData = attendanceData.map((student) => ({
+      "Roll No": student.rollNo,
+      "Student Name": student.name,
+      "Status": student.status.charAt(0).toUpperCase() + student.status.slice(1),
+      "Time": student.time || "N/A",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Attendance");
+
+    // Add column widths
+    worksheet["!cols"] = [
+      { wch: 10 },
+      { wch: 25 },
+      { wch: 12 },
+      { wch: 12 },
+    ];
+
+    XLSX.writeFile(workbook, `Attendance_${selectedClass}_${selectedDate}.xlsx`);
+    
+    toast({
+      title: "Report Exported",
+      description: `Attendance report for Class ${selectedClass} has been downloaded.`,
+    });
+  };
+
   return (
     <div className="min-h-screen">
       <Header title="Attendance" subtitle="Track daily attendance records" />
@@ -114,7 +144,7 @@ export default function Attendance() {
               <Filter className="h-4 w-4" />
               Filter
             </Button>
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleExportReport}>
               <Download className="h-4 w-4" />
               Export Report
             </Button>
