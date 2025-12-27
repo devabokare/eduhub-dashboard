@@ -32,6 +32,8 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
 
 const teachers = [
   {
@@ -160,6 +162,38 @@ export default function Teachers() {
     }
   };
 
+  const handleExport = () => {
+    const exportData = filteredTeachers.map((teacher) => ({
+      "Teacher ID": teacher.id,
+      "Name": teacher.name,
+      "Email": teacher.email,
+      "Phone": teacher.phone,
+      "Department": teacher.department,
+      "Subjects": teacher.subjects.join(", "),
+      "Experience": teacher.experience,
+      "Qualification": teacher.qualification,
+      "Class Teacher": teacher.classTeacher || "N/A",
+      "Status": teacher.status,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Teachers");
+
+    worksheet["!cols"] = [
+      { wch: 10 }, { wch: 20 }, { wch: 25 }, { wch: 18 },
+      { wch: 18 }, { wch: 30 }, { wch: 12 }, { wch: 18 },
+      { wch: 15 }, { wch: 10 },
+    ];
+
+    XLSX.writeFile(workbook, `Teachers_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "Report Exported",
+      description: `${filteredTeachers.length} teacher records exported successfully.`,
+    });
+  };
+
   return (
     <div className="min-h-screen">
       <Header title="Teachers & Staff" subtitle="Manage faculty and staff members" />
@@ -200,7 +234,7 @@ export default function Teachers() {
           </div>
 
           <div className="flex gap-3">
-            <Button variant="outline" className="gap-2">
+            <Button variant="outline" className="gap-2" onClick={handleExport}>
               <Download className="h-4 w-4" />
               Export
             </Button>

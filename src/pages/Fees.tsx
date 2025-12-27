@@ -33,6 +33,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
 
 const feeRecords = [
   {
@@ -161,6 +163,37 @@ export default function Fees() {
     }).format(amount);
   };
 
+  const handleExport = () => {
+    const exportData = filteredRecords.map((record) => ({
+      "Fee ID": record.id,
+      "Student ID": record.studentId,
+      "Student Name": record.studentName,
+      "Class": record.class,
+      "Total Fee": record.totalFee,
+      "Paid": record.paid,
+      "Pending": record.pending,
+      "Status": record.status.charAt(0).toUpperCase() + record.status.slice(1),
+      "Last Payment": record.lastPayment,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Fees");
+
+    worksheet["!cols"] = [
+      { wch: 10 }, { wch: 15 }, { wch: 20 }, { wch: 10 },
+      { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 10 },
+      { wch: 15 },
+    ];
+
+    XLSX.writeFile(workbook, `Fees_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "Report Exported",
+      description: `${filteredRecords.length} fee records exported successfully.`,
+    });
+  };
+
   return (
     <div className="min-h-screen">
       <Header title="Fees Management" subtitle="Track fee collection and payments" />
@@ -250,10 +283,10 @@ export default function Fees() {
               </div>
 
               <div className="flex gap-3">
-                <Button variant="outline" className="gap-2">
-                  <Download className="h-4 w-4" />
-                  Export
-                </Button>
+              <Button variant="outline" className="gap-2" onClick={handleExport}>
+                <Download className="h-4 w-4" />
+                Export
+              </Button>
                 <Button className="gap-2 gradient-primary border-0">
                   <CreditCard className="h-4 w-4" />
                   Record Payment

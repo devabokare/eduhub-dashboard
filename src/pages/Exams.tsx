@@ -27,6 +27,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { cn } from "@/lib/utils";
+import { toast } from "@/hooks/use-toast";
+import * as XLSX from "xlsx";
 import {
   format,
   startOfMonth,
@@ -137,6 +139,64 @@ export default function Exams() {
       default:
         return "bg-primary";
     }
+  };
+
+  const handleExportExams = () => {
+    const exportData = exams.map((exam) => ({
+      "Exam Name": exam.name,
+      "Type": exam.type,
+      "Start Date": exam.startDate,
+      "End Date": exam.endDate,
+      "Classes": exam.classes.join(", "),
+      "Subjects": exam.subjects,
+      "Total Students": exam.totalStudents,
+      "Status": exam.status.charAt(0).toUpperCase() + exam.status.slice(1),
+      "Avg Score": exam.avgScore ? `${exam.avgScore}%` : "N/A",
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Exams");
+
+    worksheet["!cols"] = [
+      { wch: 25 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+      { wch: 20 }, { wch: 10 }, { wch: 15 }, { wch: 12 },
+      { wch: 12 },
+    ];
+
+    XLSX.writeFile(workbook, `Exams_Report_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "Report Exported",
+      description: `${exams.length} exam records exported successfully.`,
+    });
+  };
+
+  const handleExportResults = () => {
+    const exportData = recentResults.map((result) => ({
+      "Class": result.class,
+      "Subject": result.subject,
+      "Average Score": `${result.avgScore}%`,
+      "Highest": result.highest,
+      "Lowest": result.lowest,
+      "Pass Rate": `${result.passed}%`,
+    }));
+
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Results");
+
+    worksheet["!cols"] = [
+      { wch: 10 }, { wch: 20 }, { wch: 15 }, { wch: 10 },
+      { wch: 10 }, { wch: 12 },
+    ];
+
+    XLSX.writeFile(workbook, `Exam_Results_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    toast({
+      title: "Report Exported",
+      description: "Exam results exported successfully.",
+    });
   };
 
   const monthStart = startOfMonth(currentMonth);
@@ -313,7 +373,7 @@ export default function Exams() {
                   <h3 className="font-semibold text-foreground">Recent Results - Class 10-A</h3>
                   <p className="text-sm text-muted-foreground">Unit Test 3 - December 2024</p>
                 </div>
-                <Button variant="outline" size="sm" className="gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={handleExportResults}>
                   <Download className="h-4 w-4" />
                   Export Report
                 </Button>
